@@ -308,12 +308,39 @@ def responder(mensajes):
     return texto
 
 
+def sin_tildes(t):
+    return t.lower().translate(str.maketrans("áéíóúü", "aeiouu"))
+
+
+SI = re.compile(r"\b(si|vale|ok|okay|confirm\w*|perfecto|de acuerdo|adelante|claro|correcto|genial|dale|reserva\w*|apunta\w*)\b")
+
+
+def validar_reserva(args, mensajes):
+    """Comprueba en el servidor (no se fía de la IA) que el nombre y el teléfono los ha
+    escrito el cliente y que el último mensaje del cliente es una confirmación."""
+    del_cliente = [m["content"] for m in mensajes if m.get("role") == "user" and isinstance(m.get("content"), str)]
+    texto = sin_tildes(" ".join(del_cliente))
+    digitos = re.sub(r"\D", "", " ".join(del_cliente))
+    tel = re.sub(r"^34", "", re.sub(r"\D", "", str(args.get("telefono", ""))))
+    if len(tel) != 9 or tel not in digitos:
+        return "El cliente todavía no ha dado su teléfono. Pídeselo; no lo inventes."
+    nombre = sin_tildes(str(args.get("nombre", ""))).split()
+    if not nombre or nombre[0][:4] not in texto:
+        return "El cliente todavía no ha dicho su nombre. Pídeselo; no lo inventes."
+    if not del_cliente or not SI.search(sin_tildes(del_cliente[-1])):
+        return "El cliente no ha confirmado. Resume la cita y pregúntale si la confirma."
+    return None
+
+
 def conversar(cliente, mensajes, guardadas):
     reintentado = False
     for _ in range(6):  # máximo de vueltas de herramientas por mensaje
         # max_tokens incluye lo que el modelo "piensa" antes de contestar: si es bajo, se queda
         # sin espacio pensando y devuelve una respuesta vacía.
-        extra = {"reasoning_effort": RAZONAMIENTO} if RAZONAMIENTO else {}
+        esfuerzo = RAZONAMIENTO
+        if esfuerzo and MODELO.startswith("qwen") and esfuerzo in ("low", "medium", "high"):
+            esfuerzo = "default"  # qwen solo admite "none" o "default"
+        extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}
         t0 = time.time()
         r = cliente.chat.completions.create(
             model=MODELO, max_tokens=4000, temperature=0 if reintentado else TEMPERATURA, tools=HERRAMIENTAS_API, messages=mensajes, **extra
@@ -341,7 +368,9 @@ def conversar(cliente, mensajes, guardadas):
         for t in msg.tool_calls:
             nombre = t.function.name
             try:
-                salida = FUNCIONES[nombre](**json.loads(t.function.arguments or "{}"))
+                args = json.loads(t.function.arguments or "{}")
+                error = validar_reserva(args, mensajes) if nombre == "reservar_cita" else None
+                salida = {"error": error} if error else FUNCIONES[nombre](**args)
             except Exception as e:
                 print("Error en herramienta:", nombre, repr(e), flush=True)
                 salida = {"error": "Error interno al ejecutar la herramienta."}
