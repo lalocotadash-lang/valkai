@@ -26,15 +26,19 @@ RAZONAMIENTO = os.environ.get("IA_RAZONAMIENTO", "low")
 # Temperatura baja = respuestas más estables y sin texto raro
 TEMPERATURA = float(os.environ.get("IA_TEMPERATURA", "0.3"))
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "valkai.db")
+# Mismos servicios y precios que en la web. Las duraciones ("min") son estimadas: ajústalas con el dueño.
 SERVICIOS = {
-    "Corte caballero": {"min": 30, "precio": 14},
+    "Corte caballero": {"min": 30, "precio": 12},
     "Corte señora": {"min": 45, "precio": 18},
-    "Tinte": {"min": 90, "precio": 35},
-    "Mechas": {"min": 120, "precio": 45},
-    "Peinado": {"min": 45, "precio": 15},
+    "Corte de pelo + barba": {"min": 45, "precio": 20},
+    "Mechas": {"min": 90, "precio": 25},
+    "Degradado": {"min": 30, "precio": 10},
 }
-APERTURA, CIERRE, PASO = 10 * 60, 20 * 60, 30  # en minutos desde las 00:00
-DIAS_ABIERTOS = {1, 2, 3, 4, 5}                 # lunes=0 ... domingo=6 (martes a sábado)
+PASO = 30  # cada cuántos minutos empieza un hueco
+# Tramos de apertura por día (minutos desde las 00:00). lunes=0 ... domingo=6
+MANANA, TARDE = (10 * 60, 14 * 60), (17 * 60, 21 * 60)
+HORARIO = {0: [MANANA, TARDE], 1: [MANANA, TARDE], 2: [MANANA, TARDE],
+           3: [MANANA, TARDE], 4: [MANANA, TARDE], 5: [MANANA]}
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 MAX_DIAS_ADELANTE = 60
 
@@ -71,8 +75,8 @@ def validar_fecha(texto):
         return None, "Esa fecha ya ha pasado."
     if f > hoy + timedelta(days=MAX_DIAS_ADELANTE):
         return None, f"Solo se puede pedir cita con un máximo de {MAX_DIAS_ADELANTE} días de antelación."
-    if f.weekday() not in DIAS_ABIERTOS:
-        return None, f"El {DIAS[f.weekday()]} la peluquería está cerrada (abre de martes a sábado)."
+    if f.weekday() not in HORARIO:
+        return None, f"El {DIAS[f.weekday()]} la peluquería está cerrada (abre de lunes a sábado)."
     return f, None
 
 
@@ -83,7 +87,9 @@ def calcular_libres(db, f, servicio):
     ahora = datetime.now()
     minimo = ahora.hour * 60 + ahora.minute + 30 if f == ahora.date() else 0
     return [
-        i for i in range(APERTURA, CIERRE - dur + 1, PASO)
+        i
+        for ini, fin in HORARIO[f.weekday()]
+        for i in range(ini, fin - dur + 1, PASO)
         if i >= minimo and all(i + dur <= o or i >= e for o, e in ocupadas)
     ]
 
@@ -187,7 +193,8 @@ Hoy es {DIAS[ahora.weekday()]} {ahora:%d/%m/%Y} y son las {ahora:%H:%M}.
 Servicios:
 {servicios}
 
-Horario: martes a sábado, de 10:00 a 20:00. Domingo y lunes cerrado.
+Horario: lunes a viernes de 10:00 a 14:00 y de 17:00 a 21:00; sábado de 10:00 a 14:00; domingo cerrado.
+El degradado sirve para cualquier tipo de corte de pelo.
 Teléfono del local: {TELEFONO}.
 
 Cómo trabajas:
