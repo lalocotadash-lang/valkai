@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valkai Peluquería</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+*{box-sizing:border-box}
+:root{
+  --navy:#14213d; --red:#c8372d; --blue:#2b4a8b; --ice:#eef1f3; --steel:#56616b; --line:#cfd6dc;
+  --pole:repeating-linear-gradient(135deg,var(--red) 0 14px,#fff 14px 28px,var(--blue) 28px 42px,#fff 42px 56px);
+  --display:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
+}
+body{margin:0;font:17px/1.6 'Figtree',system-ui,sans-serif;color:var(--navy);background:var(--ice)}
+h1,h2{font-family:var(--display);line-height:1.05;margin:0}
+h2{font-size:clamp(1.8rem,4vw,2.4rem);margin-bottom:8px}
+a{color:inherit}
+:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.stripe{height:10px;background:var(--pole)}
+
+/* Cabecera y portada */
+.top{background:var(--navy);color:#fff}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0}
+.logo{font:700 1.4rem var(--display)}
+.tel-chip{text-decoration:none;font-weight:700;border:2px solid #fff;padding:6px 14px;border-radius:999px}
+.hero{padding:40px 0 64px}
+.hero h1{font-size:clamp(3rem,9vw,5.6rem);max-width:9ch}
+.hero p{max-width:44ch;color:#cfd8e3;margin:18px 0 22px;font-size:1.1rem}
+.big-tel{display:inline-block;font:700 clamp(2rem,6vw,3.2rem) var(--display);text-decoration:underline;text-decoration-color:var(--red);text-decoration-thickness:5px;text-underline-offset:8px;margin-bottom:28px}
+.btn{display:inline-block;padding:14px 22px;border-radius:8px;font:700 1rem 'Figtree',system-ui,sans-serif;text-decoration:none;border:2px solid transparent;cursor:pointer}
+.btn.red{background:var(--red);color:#fff}
+
+/* Secciones */
+section{padding:56px 0}
+.lead{color:var(--steel);max-width:52ch;margin:0 0 24px}
+
+/* Chat */
+.chat{background:#fff;border:2px solid var(--navy);border-radius:12px;max-width:640px;overflow:hidden}
+.chat::before{content:"";display:block;height:8px;background:var(--pole)}
+.chat-head{padding:12px 16px;font-weight:700;border-bottom:1px solid var(--line)}
+#msgs{height:340px;overflow-y:auto;padding:12px 16px}
+.m{max-width:85%;padding:10px 14px;border-radius:14px;margin:8px 0}
+.bot{background:var(--ice)}
+.me{background:var(--navy);color:#fff;margin-left:auto}
+#quick{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px}
+#quick button{border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer}
+#quick button:hover{background:var(--navy);color:#fff}
+#form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+#texto{flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font:inherit}
+.nota{font-size:.9rem;color:var(--steel);margin:10px 0 0;max-width:640px}
+
+/* Precios */
+.prices{list-style:none;margin:0;padding:0;max-width:560px}
+.prices li{display:flex;align-items:baseline;gap:8px;padding:10px 0}
+.prices i{flex:1;border-bottom:2px dotted var(--line)}
+.prices b{font-family:var(--display);font-size:1.2rem}
+
+/* Ubicación */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.map{min-height:220px;border:2px dashed var(--steel);border-radius:12px;display:grid;place-items:center;color:var(--steel);text-align:center;padding:16px}
+.alt{background:#fff}
+footer{background:var(--navy);color:#cfd8e3;padding:24px 0;font-size:.9rem}
+@media(max-width:720px){.two{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="stripe"></div>
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <span class="logo">Valkai</span>
+      <a class="tel-chip" href="tel:600000000">Llamar 600 000 000</a>
+    </div>
+    <div class="hero">
+      <h1>Valkai Peluquería</h1>
+      <p>Corte, color y peinado. Pide tu cita por teléfono o con nuestro asistente en el chat.</p>
+      <a class="big-tel" href="tel:600000000">600 000 000</a><br>
+      <a class="btn red" href="#cita">Pedir cita por chat</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="cita">
+    <div class="wrap">
+      <h2>Pide tu cita por chat</h2>
+      <p class="lead">Es la única forma de pedir cita sin llamar. Te lleva un minuto.</p>
+      <div class="chat">
+        <div class="chat-head">Asistente de Valkai</div>
+        <div id="msgs" role="log" aria-live="polite"></div>
+                <form id="form">
+          <input id="texto" type="text" autocomplete="off" aria-label="Escribe tu mensaje" placeholder="Escribe aquí">
+          <button class="btn red" type="submit">Enviar</button>
+        </form>
+      </div>
+      <p class="nota">Al pedir cita aceptas que guardemos tu nombre y teléfono solo para gestionarla.</p>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
+      <h2>Servicios y precios</h2>
+      <p class="lead">Precios de ejemplo.</p>
+      <ul class="prices">
+        <li><span>Corte caballero</span><i></i><b>14 €</b></li>
+        <li><span>Corte señora</span><i></i><b>18 €</b></li>
+        <li><span>Tinte</span><i></i><b>35 €</b></li>
+        <li><span>Mechas</span><i></i><b>45 €</b></li>
+        <li><span>Peinado</span><i></i><b>15 €</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap two">
+      <div>
+        <h2>Dónde estamos</h2>
+        <p>Calle Ejemplo, 12<br>Tu ciudad</p>
+        <p><b>Horario</b><br>Martes a sábado: 10:00 a 20:00<br>Domingo y lunes: cerrado</p>
+        <p><b>Teléfono</b><br><a href="tel:600000000">600 000 000</a></p>
+      </div>
+      <div class="map">Aquí irá el mapa<br>(Google Maps u OpenStreetMap)</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Valkai Peluquería. Prototipo con datos de ejemplo.</div>
+</footer>
+
+<script>
+const msgs = document.getElementById('msgs');
+const form = document.getElementById('form');
+const input = document.getElementById('texto');
+const boton = form.querySelector('button');
+const TELEFONO = '600 000 000';
+const historial = [];   // se envía entero al servidor en cada mensaje
+
+function decir(texto, quien) {
+  const d = document.createElement('div');
+  d.className = 'm ' + quien;
+  d.textContent = texto;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+async function enviar(texto) {
+  decir(texto, 'me');
+  historial.push({ role: 'user', content: texto });
+  const espera = decir('Escribiendo…', 'bot');
+  boton.disabled = true;
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensajes: historial })
+    });
+    const datos = await r.json();
+    espera.remove();
+    if (r.ok) {
+      historial.push({ role: 'assistant', content: datos.respuesta });
+      decir(datos.respuesta, 'bot');
+    } else {
+      historial.pop();
+      decir(datos.error || 'Ha habido un problema. Llámanos al ' + TELEFONO, 'bot');
+    }
+  } catch (e) {
+    espera.remove();
+    historial.pop();
+    decir('No se ha podido conectar. Llámanos al ' + TELEFONO, 'bot');
+  }
+  boton.disabled = false;
+  input.focus();
+}
+
+form.onsubmit = e => {
+  e.preventDefault();
+  const t = input.value.trim();
+  if (!t) return;
+  input.value = '';
+  enviar(t);
+};
+
+decir('¡Hola! Soy el asistente de Valkai. Cuéntame qué te gustaría hacerte y para cuándo, y te busco hueco.', 'bot');
+</script>
+</body>
+</html>
