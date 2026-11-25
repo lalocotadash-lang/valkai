@@ -23,6 +23,8 @@ MODELO = os.environ.get("MODELO_IA", "openai/gpt-oss-120b")
 # Cuánto piensa el modelo antes de responder: low, medium o high. Vacío = no se envía
 # (útil con proveedores o modelos que no lo admiten).
 RAZONAMIENTO = os.environ.get("IA_RAZONAMIENTO", "low")
+# Temperatura baja = respuestas más estables y sin texto raro
+TEMPERATURA = float(os.environ.get("IA_TEMPERATURA", "0.3"))
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "valkai.db")
 SERVICIOS = {
     "Corte caballero": {"min": 30, "precio": 14},
@@ -189,11 +191,11 @@ Horario: martes a sábado, de 10:00 a 20:00. Domingo y lunes cerrado.
 Teléfono del local: {TELEFONO}.
 
 Cómo trabajas:
-- Habla en español, con tono cercano y breve (una o dos frases). Es un chat de texto plano: sin listas ni formato.
+- Habla en español, con tono cercano y breve (una o dos frases). Es un chat de texto plano: sin listas, sin asteriscos ni formato, y sin notas entre paréntesis como "(Esperando respuesta)". Escribe solo el mensaje para el cliente.
 - Nunca inventes huecos. Antes de proponer una hora, llama a consultar_huecos con el servicio y la fecha exacta (AAAA-MM-DD). Convierte tú expresiones como mañana, el jueves o la semana que viene en fechas concretas a partir de la fecha de hoy.
 - Razona con lo que pide el cliente: si prefiere mañana o tarde, propón los huecos que encajen; si la hora que pide no está libre, ofrece las más cercanas; si el día está cerrado o completo, consulta el siguiente día disponible y propónlo.
 - Si no queda claro el servicio, pregúntalo. Cada cita es de un solo servicio: si quiere dos, sepáralos en dos citas seguidas.
-- Para reservar necesitas servicio, día, hora, nombre y teléfono de 9 dígitos. Antes de llamar a reservar_cita, resume la cita y pide confirmación. Reserva solo tras un sí claro.
+- Para reservar necesitas servicio, día, hora, nombre y teléfono de 9 dígitos. Cuando los tengas todos, NO reserves todavía: escribe un resumen de la cita y pregunta si la confirmas. Llama a reservar_cita solo en el turno siguiente, después de que el cliente responda que sí.
 - Cuando la reserva salga bien, confírmala con servicio, día, hora y precio. Si falla, explica qué ha pasado y ofrece alternativas.
 - No puedes cancelar ni cambiar citas: pide que llamen al {TELEFONO}. No des datos de otros clientes ni de la agenda más allá de los huecos libres.
 - Si preguntan algo ajeno a la peluquería, di amablemente que solo gestionas citas.
@@ -241,7 +243,7 @@ def responder(mensajes):
         extra = {"reasoning_effort": RAZONAMIENTO} if RAZONAMIENTO else {}
         t0 = time.time()
         r = cliente.chat.completions.create(
-            model=MODELO, max_tokens=4000, tools=HERRAMIENTAS_API, messages=mensajes, **extra
+            model=MODELO, max_tokens=4000, temperature=TEMPERATURA, tools=HERRAMIENTAS_API, messages=mensajes, **extra
         )
         print(f"[IA] el modelo ha tardado {time.time() - t0:.1f} s", flush=True)
         msg = r.choices[0].message
