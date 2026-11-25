@@ -240,22 +240,50 @@ def limpiar(mensajes):
     return limpios if limpios and limpios[-1]["role"] == "user" else []
 
 
+def limpiar_respuesta(texto):
+    """Quita restos que no debe ver el cliente: razonamiento interno, notas tipo
+    "(Esperando respuesta)", asteriscos y espacios de más."""
+    texto = re.sub(r"<think>.*?</think>", "", texto, flags=re.S)
+    texto = re.sub(r"\([^()]*(?:esperando|espera|respuesta)[^()]*\)", " ", texto, flags=re.I)
+    texto = texto.replace("*", "")
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def es_degenerada(texto):
+    """Detecta cuando el modelo entra en bucle o escribe basura."""
+    if len(texto) > 450:
+        return True
+    if len(re.findall(r"(?:\.{3}|…)", texto)) >= 3:
+        return True
+    if re.search(r"\b(?:oops|sorry|probably|it looks|the)\b", texto, flags=re.I):
+        return True
+    preguntas = [re.sub(r"\W+", " ", q.lower()).strip() for q in re.findall(r"¿[^?]*\?", texto)]
+    return len(preguntas) > 2 or len(preguntas) != len(set(preguntas))
+
+
 def responder(mensajes):
     # timeout: si la IA no contesta en 45 s se corta (antes podía esperar hasta 10 min)
     cliente = OpenAI(base_url=IA_URL, api_key=IA_KEY or "sin-clave", timeout=45, max_retries=1)
     mensajes = [{"role": "system", "content": prompt_sistema()}] + mensajes
+    reintentado = False
     for _ in range(6):  # máximo de vueltas de herramientas por mensaje
         # max_tokens incluye lo que el modelo "piensa" antes de contestar: si es bajo, se queda
         # sin espacio pensando y devuelve una respuesta vacía.
         extra = {"reasoning_effort": RAZONAMIENTO} if RAZONAMIENTO else {}
         t0 = time.time()
         r = cliente.chat.completions.create(
-            model=MODELO, max_tokens=4000, temperature=TEMPERATURA, tools=HERRAMIENTAS_API, messages=mensajes, **extra
+            model=MODELO, max_tokens=4000, temperature=0 if reintentado else TEMPERATURA, tools=HERRAMIENTAS_API, messages=mensajes, **extra
         )
         print(f"[IA] el modelo ha tardado {time.time() - t0:.1f} s", flush=True)
         msg = r.choices[0].message
         if not msg.tool_calls:
-            texto = (msg.content or "").strip()
+            texto = limpiar_respuesta(msg.content or "")
+            if es_degenerada(texto):
+                print("[IA] respuesta en bucle descartada:", repr(texto[:200]), flush=True)
+                if not reintentado:
+                    reintentado = True  # se repite la misma petición, sin aleatoriedad
+                    continue
+                return "Perdona, me he liado. ¿Me repites qué necesitas?"
             if not texto:
                 print("[IA] respuesta vacía, motivo:", r.choices[0].finish_reason, flush=True)
             return texto or f"No he podido responder. Llámanos al {TELEFONO}."
