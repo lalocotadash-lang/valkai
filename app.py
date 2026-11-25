@@ -302,9 +302,8 @@ def responder(mensajes):
         # La confirmación la escribe el servidor, no la IA: así siempre es correcta y queda en el
         # historial, y la IA sabe en los siguientes mensajes que esa cita ya está hecha.
         lineas = [f"✅ Cita guardada: {c['resumen']} ({c['precio']} €)." for c in guardadas]
-        if texto.startswith(("Perdona, me he liado", "Me he liado")):
-            texto = ""
-        texto = " ".join(lineas + ([texto] if texto else []))
+        # El texto de la IA se descarta: repetía la confirmación y a veces salía roto.
+        texto = " ".join(lineas + [f"¡Te esperamos! Si necesitas cambiarla, llámanos al {TELEFONO}."])
     return texto
 
 
